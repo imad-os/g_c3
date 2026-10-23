@@ -2,28 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>2019 Citroën C3 (1.6 HDi 92) - Open-Source HDRI + Bloom + Howler.js</title>
-    <!-- Open-Source Howler.js Audio Engine (MIT License) -->
+    <title>2019 Citroën C3 (1.6 HDi 92) - 60 FPS Single-Model Showcase</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
     <style>
-        body { margin: 0; background: #0b0d12; color: #f1f5f9; font-family: system-ui, sans-serif; overflow: hidden; }
+        body { margin: 0; background: #10141d; color: #f1f5f9; font-family: system-ui, sans-serif; overflow: hidden; }
         #hud {
-            position: absolute; top: 16px; left: 16px; background: rgba(13, 16, 23, 0.90);
-            padding: 18px; border-radius: 12px; border: 1px solid #334155; width: 330px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.65); backdrop-filter: blur(8px);
+            position: absolute; top: 16px; left: 16px; background: rgba(15, 19, 28, 0.92);
+            padding: 16px; border-radius: 10px; border: 1px solid #334155; width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        h2 { margin: 0 0 4px 0; font-size: 17px; color: #ffffff; }
-        .sub { font-size: 12px; color: #94a3b8; margin-bottom: 12px; }
-        .stat-row { display: flex; justify-content: space-between; font-size: 13px; margin: 6px 0; }
+        h2 { margin: 0 0 4px 0; font-size: 16px; color: #ffffff; }
+        .sub { font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; }
         .val { font-family: monospace; color: #38bdf8; font-weight: bold; }
-        .controls { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .section-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; margin-top: 12px; margin-bottom: 6px; font-weight: 600; }
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
         button {
             background: #1e293b; color: #f8fafc; border: 1px solid #475569;
-            padding: 7px 11px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.15s;
+            padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; flex: 1;
         }
         button:hover { background: #334155; }
-        button.active { background: #c91a22; border-color: #f87171; }
-        .keys { margin-top: 12px; font-size: 11px; color: #94a3b8; line-height: 1.5; }
+        button.active { background: #c91a22; border-color: #f87171; font-weight: 600; }
+        .keys { margin-top: 12px; font-size: 11px; color: #94a3b8; line-height: 1.5; border-top: 1px solid #1e293b; padding-top: 8px; }
     </style>
     <script type="importmap">
         {
@@ -37,21 +37,29 @@
 <body>
     <div id="hud">
         <h2>Citroën C3 2019 (1.6 HDi 92)</h2>
-        <div class="sub">Open-Source HDRI + RoundedBox + Bloom + Howler.js</div>
+        <div class="sub">DV6DTED Euro 5 • Blueprint Extrusion Model</div>
         <div class="stat-row"><span>Speed:</span><span class="val" id="speedVal">0 km/h</span></div>
         <div class="stat-row"><span>Engine RPM:</span><span class="val" id="rpmVal">800 RPM</span></div>
         <div class="stat-row"><span>Gear (BVM5):</span><span class="val" id="gearVal">1</span></div>
-        <div class="stat-row"><span>Models Shown:</span><span class="val">High (Left) • Med (Center) • Low (Right)</span></div>
+        <div class="stat-row"><span>FPS:</span><span class="val" id="fpsVal">60</span></div>
 
-        <div class="controls">
-            <button id="btnAudio">🔊 Start Real HDi Sample Audio</button>
-            <button id="btnLights" class="active">💡 Lights & Bloom (L)</button>
+        <div class="section-label">Select Version (Shows 1 at a time for max FPS)</div>
+        <div class="btn-group">
+            <button class="lod-btn active" data-lod="high">1. High</button>
+            <button class="lod-btn" data-lod="medium">2. Medium</button>
+            <button class="lod-btn" data-lod="low">3. Low Poly</button>
+            <button class="lod-btn" data-lod="all">All 3</button>
         </div>
+
+        <div class="section-label">Vehicle Systems</div>
+        <div class="btn-group">
+            <button id="btnAudio">🔊 HDi Engine Audio</button>
+            <button id="btnLights" class="active">💡 Lights (L)</button>
+        </div>
+
         <div class="keys">
-            <strong>Controls:</strong><br/>
-            • <b>W / Up</b>: Throttle (Watch Squat & Turbo) &nbsp;|&nbsp; <b>S / Down</b>: Brake<br/>
-            • <b>A / D</b>: Steer Front Diamond-Cut Wheels<br/>
-            • <b>Mouse</b>: Orbit Camera around all 3 LODs
+            <b>W / Up</b>: Throttle &nbsp;|&nbsp; <b>S / Down</b>: Brake &nbsp;|&nbsp; <b>A / D</b>: Steer<br/>
+            <b>1 / 2 / 3</b>: Quick Switch LOD &nbsp;|&nbsp; <b>Mouse</b>: Orbit Camera
         </div>
     </div>
 
@@ -59,82 +67,82 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { CitroenC3 } from './CitroenC3.js';
 
+        // Fast, lightweight WebGL Renderer setup
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped at 1.5x for smooth 60 FPS
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
+        renderer.toneMappingExposure = 1.05;
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.type = THREE.PCFShadowMap;
         document.body.appendChild(renderer.domElement);
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0b0e14);
-        scene.fog = new THREE.FogExp2(0x0b0e14, 0.025);
+        scene.background = new THREE.Color(0x10141d);
+        scene.fog = new THREE.Fog(0x10141d, 15, 55);
 
-        // Open-Source Studio Environment Reflections (PMREM) for realistic clearcoat paint & chrome
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 2.3, 7.2);
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 80);
+        camera.position.set(3.2, 1.6, 4.2);
 
         const orbit = new OrbitControls(camera, renderer.domElement);
-        orbit.target.set(0, 0.65, 0);
+        orbit.target.set(0, 0.72, 0);
         orbit.enableDamping = true;
+        orbit.update();
 
-        // Post-Processing: RenderPass + UnrealBloomPass for realistic LED DRLs & Taillights
-        const composer = new EffectComposer(renderer);
-        composer.addPass(new RenderPass(scene, camera));
-        const bloomPass = new UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.38, // Bloom strength
-            0.35, // Radius
-            0.85  // Threshold (only emissive lights glow)
-        );
-        composer.addPass(bloomPass);
-
-        // Key Shadow Light
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(5, 10, 6);
+        // Studio Lighting
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
+        dirLight.position.set(5, 9, 6);
         dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(2048, 2048);
+        dirLight.shadow.mapSize.set(1024, 1024); // Fast 1024 shadow map
         scene.add(dirLight);
 
-        // Showroom Floor + Moving Grid
-        const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(80, 80),
-            new THREE.MeshStandardMaterial({ color: 0x11151f, roughness: 0.25, metalness: 0.4 })
-        );
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        scene.add(floor);
-
-        const grid = new THREE.GridHelper(80, 80, 0xc91a22, 0x1e293b);
-        grid.position.y = 0.005;
+        const grid = new THREE.GridHelper(60, 60, 0xc91a22, 0x263042);
         scene.add(grid);
 
-        // Instantiate the 3 LOD Models (High, Medium, Low)
-        const carHigh = new CitroenC3('high');
-        carHigh.root.position.x = -2.5;
-        scene.add(carHigh.root);
+        // Instantiate the 3 LOD Models, but ONLY show 'high' by default
+        const models = {
+            high: new CitroenC3('high'),
+            medium: new CitroenC3('medium'),
+            low: new CitroenC3('low')
+        };
 
-        const carMed = new CitroenC3('medium');
-        carMed.root.position.x = 0;
-        scene.add(carMed.root);
+        scene.add(models.high.root);
+        scene.add(models.medium.root);
+        scene.add(models.low.root);
 
-        const carLow = new CitroenC3('low');
-        carLow.root.position.x = 2.5;
-        scene.add(carLow.root);
+        let activeMode = 'high';
+        function setDisplayMode(mode) {
+            activeMode = mode;
+            document.querySelectorAll('.lod-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.lod === mode);
+            });
 
-        const cars = [carHigh, carMed, carLow];
+            if (mode === 'all') {
+                models.high.root.visible = true;
+                models.medium.root.visible = true;
+                models.low.root.visible = true;
+                models.high.root.position.x = -2.4;
+                models.medium.root.position.x = 0;
+                models.low.root.position.x = 2.4;
+            } else {
+                models.high.root.visible = (mode === 'high');
+                models.medium.root.visible = (mode === 'medium');
+                models.low.root.visible = (mode === 'low');
+                models[mode].root.position.x = 0;
+            }
+        }
+        setDisplayMode('high');
 
-        // Keyboard Inputs
+        document.querySelectorAll('.lod-btn').forEach(btn => {
+            btn.addEventListener('click', () => setDisplayMode(btn.dataset.lod));
+        });
+
+        // Keyboard Controls
         const keys = { w: false, s: false, a: false, d: false };
         window.addEventListener('keydown', (e) => {
             const k = e.key.toLowerCase();
@@ -142,6 +150,9 @@
             if (k === 's' || e.key === 'ArrowDown') keys.s = true;
             if (k === 'a' || e.key === 'ArrowLeft') keys.a = true;
             if (k === 'd' || e.key === 'ArrowRight') keys.d = true;
+            if (k === '1') setDisplayMode('high');
+            if (k === '2') setDisplayMode('medium');
+            if (k === '3') setDisplayMode('low');
             if (k === 'l') document.getElementById('btnLights').click();
         });
         window.addEventListener('keyup', (e) => {
@@ -156,20 +167,32 @@
         document.getElementById('btnLights').addEventListener('click', (e) => {
             lightsOn = !lightsOn;
             e.target.classList.toggle('active', lightsOn);
-            cars.forEach(c => c.setHeadlights(lightsOn));
+            Object.values(models).forEach(m => m.setHeadlights(lightsOn));
         });
 
         document.getElementById('btnAudio').addEventListener('click', (e) => {
-            carMed.initHowlerAudio();
-            e.target.textContent = "🔊 Howler.js Real Diesel Active";
+            models.high.initHowlerAudio();
+            e.target.textContent = "🔊 HDi Audio Active";
             e.target.classList.add('active');
         });
 
+        // Render Loop with FPS Counter
         const clock = new THREE.Clock();
+        let frameCount = 0;
+        let fpsAccum = 0;
+
         function animate() {
             requestAnimationFrame(animate);
             const dt = Math.min(clock.getDelta(), 0.1);
             orbit.update();
+
+            frameCount++;
+            fpsAccum += dt;
+            if (fpsAccum >= 0.5) {
+                document.getElementById('fpsVal').textContent = Math.round(frameCount / fpsAccum);
+                frameCount = 0;
+                fpsAccum = 0;
+            }
 
             const controls = {
                 throttle: keys.w ? 1 : 0,
@@ -177,14 +200,21 @@
                 steer: (keys.a ? 1 : 0) + (keys.d ? -1 : 0)
             };
 
-            cars.forEach(c => c.update(dt, controls));
-            grid.position.z = (grid.position.z - carMed.state.speedMs * dt) % 1;
+            // Only update visible model(s) to save CPU/GPU
+            const primaryCar = activeMode === 'all' ? models.high : models[activeMode];
+            if (activeMode === 'all') {
+                Object.values(models).forEach(m => m.update(dt, controls));
+            } else {
+                primaryCar.update(dt, controls);
+            }
 
-            document.getElementById('speedVal').textContent = `${Math.round(carMed.state.speedMs * 3.6)} km/h`;
-            document.getElementById('rpmVal').textContent = `${Math.round(carMed.state.rpm)} RPM`;
-            document.getElementById('gearVal').textContent = carMed.state.gear;
+            grid.position.z = (grid.position.z - primaryCar.state.speedMs * dt) % 1;
 
-            composer.render();
+            document.getElementById('speedVal').textContent = `${Math.round(primaryCar.state.speedMs * 3.6)} km/h`;
+            document.getElementById('rpmVal').textContent = `${Math.round(primaryCar.state.rpm)} RPM`;
+            document.getElementById('gearVal').textContent = primaryCar.state.gear;
+
+            renderer.render(scene, camera);
         }
         animate();
 
@@ -192,7 +222,6 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
